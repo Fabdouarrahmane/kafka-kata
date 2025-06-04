@@ -1,5 +1,5 @@
 # Build stage
-FROM maven:3.9.9-eclipse-temurin-23 AS build
+FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copy Maven files
@@ -18,11 +18,15 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Runtime stage
-FROM eclipse-temurin:23-jre-jammy
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Create non-root user
-RUN groupadd -r spring && useradd -r -g spring spring
+RUN addgroup -g 1000 spring && \
+    adduser -u 1000 -G spring -s /bin/sh -D spring
 
 # Copy JAR from build stage
 COPY --from=build /app/target/kafka-*.jar app.jar
